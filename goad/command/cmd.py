@@ -1,4 +1,5 @@
 import subprocess
+import shutil
 import psutil
 import sys
 from goad.log import Log
@@ -209,8 +210,13 @@ class Command:
         pass
 
     def get_azure_account_output(self):
+        # Resolve the az launcher explicitly: on Windows az is az.cmd and
+        # CreateProcess does not apply PATHEXT, so a bare "az" raises
+        # FileNotFoundError (WinError 2). shutil.which applies PATHEXT and
+        # returns the full path on every platform.
+        az_bin = shutil.which("az") or "az"
         result = subprocess.run(
-            ["az", "account", "list", "--output", "json"],
+            [az_bin, "account", "list", "--output", "json"],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True
