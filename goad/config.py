@@ -42,7 +42,7 @@ class Config:
 
         config.add_section('azure')
         config.set('azure', '; az_location : region must offer the vm size below for your subscription')
-        config.set('azure', 'az_location', 'westus2')
+        config.set('azure', 'az_location', 'denmarkeast')
         config.set('azure', '; az_allowed_source_ip : CIDR allowed to ssh the jumpbox, "*" exposes the lab to the internet')
         config.set('azure', 'az_allowed_source_ip', '*')
 
