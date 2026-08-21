@@ -8,6 +8,10 @@ resource "azurerm_public_ip" "ubuntu_public_ip" {
   location            = azurerm_resource_group.resource_group.location
   resource_group_name = azurerm_resource_group.resource_group.name
   allocation_method   = "Static"
+  # Basic SKU public IPs are retired: subscriptions now get a quota of 0 and
+  # creation fails with IPv4BasicSkuPublicIpCountLimitReached. Standard SKU
+  # requires allocation_method = "Static", which is already set above.
+  sku                 = "Standard"
 }
 
 resource "azurerm_network_interface" "ubuntu_jumbox_nic" {
