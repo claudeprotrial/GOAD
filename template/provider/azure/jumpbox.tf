@@ -12,6 +12,19 @@ resource "azurerm_public_ip" "ubuntu_public_ip" {
   # creation fails with IPv4BasicSkuPublicIpCountLimitReached. Standard SKU
   # requires allocation_method = "Static", which is already set above.
   sku                 = "Standard"
+
+  lifecycle {
+    # Some subscriptions stamp ip_tags server-side, e.g.
+    #   ip_tags = { "FirstPartyUsage" = "/Unprivileged" }
+    # Terraform reads that back, sees nothing for it in the config and plans
+    # to remove it - and ip_tags is ForceNew, so the public IP is scheduled
+    # for destroy/recreate on every later apply. Azure then refuses the
+    # delete while the IP is attached to the jumpbox NIC:
+    #   PublicIPAddressCannotBeDeleted ... still allocated to resource
+    # so re-running `goad.py -t install` on an existing lab dies mid-apply
+    # instead of being a no-op. Leave server-assigned ip_tags alone.
+    ignore_changes = [ip_tags]
+  }
 }
 
 resource "azurerm_network_interface" "ubuntu_jumbox_nic" {

@@ -55,6 +55,13 @@ resource "azurerm_public_ip" "nat_public_ip" {
   resource_group_name = azurerm_resource_group.resource_group.name
   allocation_method   = "Static"
   sku                 = "Standard"
+
+  lifecycle {
+    # See the jumpbox public IP: some subscriptions stamp ip_tags
+    # server-side, and ip_tags is ForceNew, so without this every later
+    # apply plans to replace this IP and detach the NAT gateway with it.
+    ignore_changes = [ip_tags]
+  }
 }
 
 resource "azurerm_nat_gateway" "nat_gateway" {
