@@ -27,9 +27,16 @@ class TerraformProvider(Provider):
         asks its own "Create lab with theses settings ?" first, and python's
         buffered input() consumes the following line meant for terraform.
 
-        So when stdin is not a tty, approve explicitly. The operator has
-        already confirmed once through GOAD before reaching this point.
+        Set GOAD_AUTO_APPROVE=1 to approve automatically. The non-tty case
+        is also covered, but that check alone is not enough: a task runner
+        can hand the process an inherited tty that nobody is ever going to
+        type into, and terraform then blocks or hits EOF anyway.
+
+        The operator has already confirmed once through GOAD before
+        reaching this point.
         """
+        if os.environ.get('GOAD_AUTO_APPROVE', '').lower() in ('1', 'true', 'yes'):
+            return ['-auto-approve']
         if sys.stdin is None or not sys.stdin.isatty():
             return ['-auto-approve']
         return []
