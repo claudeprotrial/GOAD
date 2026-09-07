@@ -57,7 +57,22 @@ resource "azurerm_linux_virtual_machine" "jumpbox" {
     version   = "latest"
   }
 
-  provisioner "local-exec" {
-    command = "echo '${tls_private_key.ssh.private_key_pem}' > ../ssh_keys/ubuntu-jumpbox.pem && chmod 600 ../ssh_keys/ubuntu-jumpbox.pem"
-  }
+}
+
+# Write the jumpbox private key where the provisioner expects to find it.
+#
+# This was a local-exec running:
+#   echo '<pem>' > ../ssh_keys/ubuntu-jumpbox.pem && chmod 600 ...
+# which is a POSIX shell line. On Windows terraform hands it to cmd.exe,
+# where the quotes are written literally, the multi-line PEM is mangled and
+# chmod does not exist. The provisioner reports no error, so the key silently
+# never appears and every later ssh/scp to the jumpbox fails with
+# "Permission denied (publickey)" - after the whole lab has been built.
+#
+# local_file is platform independent, writes the content verbatim, and fails
+# loudly if it cannot.
+resource "local_file" "jumpbox_ssh_key" {
+  content         = tls_private_key.ssh.private_key_pem
+  filename        = "${path.module}/../ssh_keys/ubuntu-jumpbox.pem"
+  file_permission = "0600"
 }
