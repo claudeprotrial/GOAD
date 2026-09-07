@@ -32,7 +32,7 @@ resource "azurerm_windows_virtual_machine" "goad-vm" {
 
   os_disk {
     caching              = "ReadWrite"
-    storage_account_type = "Standard_LRS"
+    storage_account_type = var.os_disk_type
   }
 
   source_image_reference {
