@@ -1,0 +1,23 @@
+# GOAD's sources are consumed on Linux even when you drive it from Windows:
+# the azure/aws providers copy this tree to the ubuntu jumpbox, which runs the
+# setup scripts and ansible from it.
+#
+# Cloned on Windows with core.autocrlf=true (the Git for Windows default),
+# every file lands with CRLF. The jumpbox is then handed CRLF shell scripts:
+#
+#     ssh jumpbox "bash -s" < scripts/setup_azure.sh
+#
+# and bash treats the trailing \r as part of each command, so the whole script
+# fails line by line:
+#
+#     bash: line 2: $'\r': command not found
+#     E: Invalid operation update
+#     /usr/bin/python3: No module named pip
+#
+# Nothing aborts, so provisioning continues to the point where ansible-playbook
+# is missing and the lab looks like an ansible problem rather than a checkout
+# problem.
+#
+# Force LF in the working tree regardless of platform. Binary files are still
+# detected and left alone by text=auto.
+* text=auto eol=lf
