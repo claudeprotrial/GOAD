@@ -1,6 +1,7 @@
 from goad.provider.provider import Provider
 import os
 import shutil
+import sys
 from goad.goadpath import GoadPath
 from goad.log import Log
 
@@ -14,13 +15,32 @@ class TerraformProvider(Provider):
         ]
         return all(checks)
 
+    @staticmethod
+    def _approval_args():
+        """
+        Terraform asks for approval on stdin. When GOAD is driven
+        non-interactively (a script, CI, or any piped stdin) that read hits
+        EOF and terraform gives up with "error asking for approval: EOF",
+        after the plan has already been computed.
+
+        Feeding the answer in through the pipe does not work either: GOAD
+        asks its own "Create lab with theses settings ?" first, and python's
+        buffered input() consumes the following line meant for terraform.
+
+        So when stdin is not a tty, approve explicitly. The operator has
+        already confirmed once through GOAD before reaching this point.
+        """
+        if sys.stdin is None or not sys.stdin.isatty():
+            return ['-auto-approve']
+        return []
+
     def install(self):
         self.command.run_terraform(['init'], self.path)
         self.command.run_terraform(['plan'], self.path)
-        return self.command.run_terraform(['apply'], self.path)
+        return self.command.run_terraform(['apply'] + self._approval_args(), self.path)
 
     def destroy(self):
-        return self.command.run_terraform(['destroy'], self.path)
+        return self.command.run_terraform(['destroy'] + self._approval_args(), self.path)
 
     def start(self):
         pass
