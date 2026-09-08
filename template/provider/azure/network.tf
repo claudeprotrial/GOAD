@@ -1,6 +1,9 @@
 resource "azurerm_virtual_network" "virtual_network" {
-  name                = "{{lab_name}}-virtual-network"
-  address_space       = ["{{ip_range}}.0/24"]
+  name = "{{lab_name}}-virtual-network"
+  # The lab subnet consumes the whole {{ip_range}}.0/24, so Bastion cannot be
+  # retrofitted without a second address space: AzureBastionSubnet needs its
+  # own /26 and there is no room left inside the lab range.
+  address_space       = var.enable_bastion ? ["{{ip_range}}.0/24", var.bastion_address_space] : ["{{ip_range}}.0/24"]
   location            = azurerm_resource_group.resource_group.location
   resource_group_name = azurerm_resource_group.resource_group.name
 }
