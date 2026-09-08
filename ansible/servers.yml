@@ -25,7 +25,21 @@
     SQLYSADMIN: "{{SQLSVCACCOUNT}}"
     domain_admin: "{{domain}}\\{{admin_user}}"
     domain_admin_password: "{{lab.domains[domain].domain_password}}"
-    sql_sysadmins: "{{lab.hosts[dict_key].mssql.sysadmins | default([]) }}"
+    # Always give the provider's admin account SQL sysadmin, on top of whatever
+    # config.json lists.
+    #
+    # sccm-install.yml runs the WSUS post-install as "{{domain}}\{{admin_user}}"
+    # (see domain_username there). config.json only grants sysadmin to
+    # SCCMLAB\administrator, which matches ad/SCCM/data/inventory's
+    # admin_user=administrator - so it works on vagrant/vmware/proxmox. The
+    # azure and aws provider inventories override admin_user to goadmin, which
+    # gets no SQL login at all, and WSUS PostInstall dies with:
+    #   Fatal Error: Login failed for user 'SCCMLAB\goadmin'.
+    # after the lab is otherwise fully built.
+    #
+    # Deriving it from admin_user keeps every provider correct instead of
+    # hardcoding one provider's account name into the shared lab config.
+    sql_sysadmins: '{{ ((lab.hosts[dict_key].mssql.sysadmins | default([])) + [lab.domains[domain].netbios_name ~ "\\" ~ admin_user]) | unique }}'
     executeaslogin: "{{lab.hosts[dict_key].mssql.executeaslogin  | default({}) }}"
     executeasuser:  "{{lab.hosts[dict_key].mssql.executeasuser | default({}) }}"
     sa_password: "{{lab.hosts[dict_key].mssql.sa_password}}"
